@@ -1,0 +1,6 @@
+# Makefile MUST keep tabs
+Makefile text eol=lf
+*.sh text eol=lf
+*.cpp text eol=lf
+*.cfg text eol=lf
+*.yml text eol=lf

@@ -3,7 +3,7 @@ name: Build Hydrapulse ISO
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # кнопка "Run workflow" в интерфейсе GitHub
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,7 +17,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cpio gzip \
-            grub-pc-bin grub-common grub2-common xorriso mtools
+            grub-pc-bin grub-common grub2-common xorriso mtools \
+            linux-image-generic
 
       - name: Compile init (static)
         run: make
@@ -28,21 +29,22 @@ jobs:
       - name: Build initramfs
         run: |
           chmod +x mkinitramfs.sh
-          ./mkinitramfs.sh
+          bash mkinitramfs.sh
 
-      - name: Get Linux kernel
+      - name: Prepare ISO structure
         run: |
-          cp /boot/vmlinuz-* ./vmlinuz-linux 2>/dev/null || \
-          sudo apt-get install -y linux-image-generic && \
-          cp /boot/vmlinuz-* ./vmlinuz-linux
+          KERNEL=$(ls /boot/vmlinuz-* | head -1)
+          echo "Using kernel: $KERNEL"
+          mkdir -p iso/boot/grub
+          cp "$KERNEL" iso/boot/vmlinuz-linux
+          cp initramfs.cpio.gz iso/boot/
+          cp grub.cfg iso/boot/grub/
 
       - name: Build ISO
-        run: |
-          mkdir -p iso/boot/grub
-          cp vmlinuz-linux      iso/boot/
-          cp initramfs.cpio.gz  iso/boot/
-          cp grub.cfg           iso/boot/grub/
-          grub-mkrescue -o hydrapulse.iso iso/
+        run: grub-mkrescue -o hydrapulse.iso iso/
+
+      - name: Show ISO info
+        run: ls -lh hydrapulse.iso
 
       - name: Upload ISO
         uses: actions/upload-artifact@v4

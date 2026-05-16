@@ -110,6 +110,39 @@ std::vector<DE> get_des() {
     };
 }
 
+// ============ FILE EXTENSIONS ============
+
+struct FileExt {
+    std::string ext;
+    std::string desc;
+    bool enabled;
+};
+
+std::vector<FileExt> get_default_extensions() {
+    return {
+        {".exe",  "Executable binaries",   false},
+        {".bat",  "Batch scripts",          false},
+        {".sh",   "Shell scripts",           true},
+        {".py",   "Python scripts",          false},
+        {".txt",  "Text files",              true},
+        {".conf", "Configuration files",     true},
+        {".log",  "Log files",               true},
+        {".cpp",  "C++ source files",        false},
+        {".html", "HTML files",              false},
+        {".json", "JSON files",              false}
+    };
+}
+
+void show_extensions(const std::vector<FileExt>& exts) {
+    for (size_t i = 0; i < exts.size(); i++) {
+        std::cout << "    " << GRN << (i+1) << ")" RST " "
+                  << exts[i].ext
+                  << std::string(8 - exts[i].ext.size(), ' ')
+                  << (exts[i].enabled ? GRN "true " RST : RED "false" RST)
+                  << "  " DIM << exts[i].desc << RST "\n";
+    }
+}
+
 // ============ HYDRAINSTALL ============
 
 void hydrainstall() {
@@ -121,8 +154,8 @@ void hydrainstall() {
     std::cout <<      "  ║     Hydrapulse System Installer     ║\n";
     std::cout <<      "  ╚══════════════════════════════════════╝\n" RST;
 
-    // ---- 1/5  DISK ----
-    std::cout << "\n" YEL "  [1/5] " WHT "Disk Selection\n" RST;
+    // ---- 1/6  DISK ----
+    std::cout << "\n" YEL "  [1/6] " WHT "Disk Selection\n" RST;
     std::cout << DIM "  ─────────────────────────────\n" RST;
 
     auto disks = detect_disks();
@@ -149,8 +182,8 @@ void hydrainstall() {
     std::getline(std::cin, input);
     if (input != "yes") { std::cout << YEL "  Aborted.\n" RST; return; }
 
-    // ---- 2/5  DESKTOP ----
-    std::cout << "\n" YEL "  [2/5] " WHT "Desktop Environment\n" RST;
+    // ---- 2/6  DESKTOP ----
+    std::cout << "\n" YEL "  [2/6] " WHT "Desktop Environment\n" RST;
     std::cout << DIM "  ─────────────────────────────\n" RST;
 
     auto des = get_des();
@@ -167,8 +200,32 @@ void hydrainstall() {
     std::string de_id   = des[ei].id;
     std::string de_name = des[ei].name;
 
-    // ---- 3/5  PROFILE ----
-    std::cout << "\n" YEL "  [3/5] " WHT "User Profile\n" RST;
+    // ---- 3/6  APP EXTENSIONS ----
+    std::cout << "\n" YEL "  [3/6] " WHT "App Extensions\n" RST;
+    std::cout << DIM "  ─────────────────────────────\n" RST;
+    std::cout << "  Select which file types the system will support.\n";
+    std::cout << "  Enter number to toggle, " CYN "done" RST " to continue.\n\n";
+
+    auto exts = get_default_extensions();
+    show_extensions(exts);
+
+    while (true) {
+        std::cout << "\n  Toggle [1-" << exts.size() << "] or 'done': ";
+        std::getline(std::cin, input);
+        if (input == "done" || input == "d") break;
+        int ti = 0;
+        try { ti = std::stoi(input) - 1; } catch(...) { ti = -1; }
+        if (ti >= 0 && ti < (int)exts.size()) {
+            exts[ti].enabled = !exts[ti].enabled;
+            std::cout << "  " << exts[ti].ext << " → "
+                      << (exts[ti].enabled ? GRN "true" RST : RED "false" RST) << "\n";
+        } else {
+            std::cout << RED "  Invalid number.\n" RST;
+        }
+    }
+
+    // ---- 4/6  PROFILE ----
+    std::cout << "\n" YEL "  [4/6] " WHT "User Profile\n" RST;
     std::cout << DIM "  ─────────────────────────────\n" RST;
 
     std::cout << "  Use root for all? [true/false]: ";
@@ -191,21 +248,25 @@ void hydrainstall() {
         std::cout << RED "  Empty password. Aborted.\n" RST; return;
     }
 
-    // ---- 4/5  CONFIRM ----
-    std::cout << "\n" YEL "  [4/5] " WHT "Confirmation\n" RST;
+    // ---- 5/6  CONFIRM ----
+    std::cout << "\n" YEL "  [5/6] " WHT "Confirmation\n" RST;
     std::cout << DIM "  ─────────────────────────────\n" RST;
     std::cout << "  Disk:     " CYN << disk.path << " (" << disk.size_h << ")" RST "\n";
     std::cout << "  Format:   " CYN "ext4" RST "\n";
     std::cout << "  Desktop:  " CYN << de_name << RST "\n";
     std::cout << "  Root all: " CYN << (root_all?"true":"false") << RST "\n";
     std::cout << "  User:     " CYN << username << RST "\n";
+    std::cout << "  Extensions: ";
+    for (auto& e : exts)
+        if (e.enabled) std::cout << CYN << e.ext << " " RST;
+    std::cout << "\n";
 
     std::cout << "\n  Proceed? [yes/no]: ";
     std::getline(std::cin, input);
     if (input != "yes") { std::cout << YEL "  Aborted.\n" RST; return; }
 
-    // ---- 5/5  INSTALL ----
-    std::cout << "\n" YEL "  [5/5] " WHT "Installing...\n" RST;
+    // ---- 6/6  INSTALL ----
+    std::cout << "\n" YEL "  [6/6] " WHT "Installing...\n" RST;
     std::cout << DIM "  ─────────────────────────────\n" RST;
 
     std::string p1 = disk.path + "1";
@@ -277,6 +338,9 @@ void hydrainstall() {
           << "DESKTOP_ENV=" << de_id << "\n"
           << "ROOT_ALL=" << (root_all?"true":"false") << "\n"
           << "DEFAULT_USER=" << username << "\n";
+        // Write extension support config
+        for (auto& e : exts)
+            f << "EXT_" << e.ext.substr(1) << "=" << (e.enabled?"true":"false") << "\n";
     }
     {
         std::ofstream f("/mnt/hydra/etc/fstab");
@@ -330,7 +394,8 @@ void print_splash() {
     ╩ ╩ ╩ ═╩╝╩╚═╩ ╩╩  ╚═╝╩═╝╚═╝╚═╝
 )" RST;
     std::cout << DIM "    Hydrapulse OS v0.2 beta\n" RST;
-    std::cout << DIM "    Type 'help' for commands\n\n" RST;
+    std::cout << DIM "    Type 'help' for commands\n" RST;
+    std::cout << YEL "    → Type 'install' to install Hydrapulse\n\n" RST;
 }
 
 // ============ SYSTEM INIT ============
@@ -357,7 +422,7 @@ void cmd_help() {
     std::cout << GRN "    uname" RST "         — system info\n";
     std::cout << GRN "    uptime" RST "        — system uptime\n";
     std::cout << GRN "    lsblk" RST "         — list disks\n";
-    std::cout << GRN "    hydrainstall" RST "  — install Hydrapulse to disk\n";
+    std::cout << GRN "    install" RST "        — install Hydrapulse to disk\n";
     std::cout << GRN "    reboot" RST "        — reboot system\n";
     std::cout << GRN "    exit" RST "          — shutdown\n\n";
 }
@@ -415,7 +480,7 @@ int main() {
         else if (line == "uname")         cmd_uname();
         else if (line == "uptime")        cmd_uptime();
         else if (line == "lsblk")         cmd_lsblk();
-        else if (line == "hydrainstall")  hydrainstall();
+        else if (line == "hydrainstall" || line == "install")  hydrainstall();
         else if (line == "reboot")      { sync(); reboot(RB_AUTOBOOT); }
         else if (line == "exit" || line == "quit") break;
         else if (!line.empty())

@@ -1,0 +1,51 @@
+name: Build Hydrapulse ISO
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # кнопка "Run workflow" в интерфейсе GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cpio gzip \
+            grub-pc-bin grub-common grub2-common xorriso mtools
+
+      - name: Compile init (static)
+        run: make
+
+      - name: Verify init is Linux ELF
+        run: file init
+
+      - name: Build initramfs
+        run: |
+          chmod +x mkinitramfs.sh
+          ./mkinitramfs.sh
+
+      - name: Get Linux kernel
+        run: |
+          cp /boot/vmlinuz-* ./vmlinuz-linux 2>/dev/null || \
+          sudo apt-get install -y linux-image-generic && \
+          cp /boot/vmlinuz-* ./vmlinuz-linux
+
+      - name: Build ISO
+        run: |
+          mkdir -p iso/boot/grub
+          cp vmlinuz-linux      iso/boot/
+          cp initramfs.cpio.gz  iso/boot/
+          cp grub.cfg           iso/boot/grub/
+          grub-mkrescue -o hydrapulse.iso iso/
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydrapulse-iso
+          path: hydrapulse.iso

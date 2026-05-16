@@ -37,6 +37,7 @@ jobs:
           echo "Using kernel: $KERNEL"
           mkdir -p iso/boot/grub
           sudo cp "$KERNEL" iso/boot/vmlinuz-linux
+          sudo chmod +r iso/boot/vmlinuz-linux
           cp initramfs.cpio.gz iso/boot/
           cp grub.cfg iso/boot/grub/
 
